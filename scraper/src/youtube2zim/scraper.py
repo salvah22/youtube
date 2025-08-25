@@ -752,6 +752,7 @@ class Youtube2Zim:
                     video_location,
                     video_id
                 )
+                zim_path = f"videos/{video_id}/video.{video_path.suffix}"
             else:
                 post_process_video(
                     video_location,
