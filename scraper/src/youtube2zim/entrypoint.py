@@ -204,7 +204,7 @@ def main():
 
     parser.add_argument(
         "--skip-reencoding",
-        help="Skip reencoding downloaded videos, increasing disk usage.",
+        help="Skip reencoding downloaded videos, keeping original quality at the expense of increased final ZIM size and potential codec issues.",
         dest="skip_reencoding", action="store_true", default=False
     )
 
