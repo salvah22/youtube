@@ -203,9 +203,9 @@ def main():
     )
 
     parser.add_argument(
-        "--skip-reencode",
+        "--skip-reencoding",
         help="Skip reencoding downloaded videos, increasing disk usage.",
-        dest="skip_reencode", action="store_true", default=False
+        dest="skip_reencoding", action="store_true", default=False
     )
 
     args = parser.parse_args()
