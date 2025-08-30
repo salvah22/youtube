@@ -115,7 +115,7 @@ class Youtube2Zim:
         banner_image=None,
         main_color=None,
         secondary_color=None,
-        skip_reencode=False,
+        skip_reencoding=False,
     ):
         # data-retrieval info
         self.youtube_id = youtube_id
@@ -125,6 +125,7 @@ class Youtube2Zim:
         # video-encoding info
         self.video_format = video_format
         self.low_quality = low_quality
+        self.suceeded_zim_path = {}
 
         # options & zim params
         self.nb_videos_per_page = nb_videos_per_page
@@ -143,7 +144,7 @@ class Youtube2Zim:
         self.main_color = main_color
         self.secondary_color = secondary_color
         self.disable_metadata_checks = disable_metadata_checks
-        self.skip_reencode = skip_reencode
+        self.skip_reencoding = skip_reencoding
 
         metadata.APPLY_RECOMMENDATIONS = not self.disable_metadata_checks
 
@@ -722,6 +723,15 @@ class Youtube2Zim:
 
         s3_key = None
         if self.s3_storage:
+
+            '''
+            initial consideration: skip-reencoding wont play nice with s3_storage,
+            s3_storage usage assumes standardization (all videos haave same format)
+            which is not assured when skipping reencoding downloads (unimplemented),
+            to address this, ideally, a method should scan the remote folder to
+            find exactly what is the cached video format
+            '''
+
             s3_key = f"{self.video_format}/{self.video_quality}/{video_id}"
             logger.debug(
                 f"Attempting to download video file for {video_id} from cache..."
@@ -732,6 +742,7 @@ class Youtube2Zim:
                     video_path,
                     callback=Callback(delete_callback, args=(video_path,)),
                 )
+                self.suceeded_zim_path.update({video_id: zim_path})
                 return True
 
         try:
@@ -747,7 +758,7 @@ class Youtube2Zim:
             with yt_dlp.YoutubeDL(options_copy) as ydl:
                 ydl.download([video_id])
 
-            if self.skip_reencode:
+            if self.skip_reencoding:
                 video_path = find_video_in_dir(
                     video_location,
                     video_id
@@ -766,6 +777,7 @@ class Youtube2Zim:
                 video_path,
                 callback=Callback(delete_callback, args=(video_path,)),
             )
+            self.suceeded_zim_path.update({video_id: zim_path})
         except (
             yt_dlp.utils.DownloadError,
             FileNotFoundError,
@@ -1139,7 +1151,7 @@ class Youtube2Zim:
                     banner_path=f"channels/{author['channelId']}/banner.jpg",
                 ),
                 publication_date=video["contentDetails"]["videoPublishedAt"],
-                video_path=f"videos/{video_id}/video.{self.video_format}",
+                video_path=self.suceeded_zim_path[video_id],
                 thumbnail_path=get_thumbnail_path(video_id),
                 subtitle_path=f"videos/{video_id}" if len(subtitles_list) > 0 else None,
                 subtitle_list=subtitles_list,
